@@ -1,9 +1,6 @@
-__precompile__()
-
 module SemialgebraicSets
 
-using Compat
-using Compat.Random
+using Random
 
 using MultivariatePolynomials
 const MP = MultivariatePolynomials
@@ -26,8 +23,23 @@ end
 function Base.show(io::IO, ::FullSpace)
     print(io, "R^n")
 end
+nequalities(::FullSpace) = 0
+equalities(::FullSpace) = []
+MP.changecoefficienttype(S::Type{FullSpace}, T::Type) = S
 
-Base.intersect(S::AbstractSemialgebraicSet, T::AbstractSemialgebraicSet, U::AbstractSemialgebraicSet...) = intersect(intersect(S, T), U...)
+function MP.changecoefficienttype(set::AbstractSemialgebraicSet, T::Type)
+    return convert(MP.changecoefficienttype(typeof(set), T), set)
+end
+
+Base.intersect(S::AbstractAlgebraicSet, T::FullSpace) = S
+Base.intersect(S::FullSpace, T::AbstractAlgebraicSet) = T
+Base.intersect(S::FullSpace, T::FullSpace) = S
+
+# If `intersect(S, T)` is not implemented, this method will `StackOverflow`.
+Base.intersect(S::AbstractSemialgebraicSet, T::AbstractSemialgebraicSet, args...; kws...) = intersect(intersect(S, T), args...; kws...)
+# The keywords are only used when transforming `Element`
+# into `BasicSemialgebraicSet`.
+Base.intersect(set::AbstractSemialgebraicSet; kws...) = set
 
 include("groebner.jl")
 include("ideal.jl")
@@ -35,6 +47,7 @@ include("solve.jl")
 include("variety.jl")
 include("basic.jl")
 
+include("fix.jl")
 include("macro.jl")
 
 end # module
